@@ -11,7 +11,7 @@ if (token) {
 } else {
 	var stored = localStorage.getItem('access_token');
 	if (stored) {
-		document.querySelector("#token_field").innerText = token;
+		document.querySelector("#token_field").innerText = stored;
 	} else {
 		/* No token - try getting one */
 		let url = `https://id.twitch.tv/oauth2/authorize?response_type=token&client_id=${CLIENT_ID}&redirect_uri=${RED_URL}&scope=${REQ_SCOPES}`
