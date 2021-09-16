@@ -52,11 +52,12 @@ fetch('https://api.streamelements.com/kappa/v2/channels/me', {
 })
 .then(response => response.json())
 .then(data => {
-  SE_ID = data._id;
-  ComfyJS.Init( data.username, TOKENS.TW );
+	SE_ID = data._id;
+	if (SE_ID == undefined) {
+		document.querySelector("#error").className = "";
+	} else {
+		ComfyJS.Init( data.username, TOKENS.TW );
+	}
 }).catch(err => {
 	console.error(err)
 });
-if (SE_ID == undefined) {
-	document.querySelector("#error").className = "";
-}
