@@ -6,7 +6,6 @@ for (let v of hash.split('&')) {
 	let s = v.split('=');
 	TOKENS[s[0]] = (s.length > 1) ? s[1] : undefined;
 }
-var token = hash.substr(hash.indexOf('access_token=')).split('&')[0].split('=')[1];
 
 if (TOKENS.TW == undefined || TOKENS.SE == undefined) {
 	document.querySelector("#error").className = "";
