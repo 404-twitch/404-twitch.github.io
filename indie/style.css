@@ -116,6 +116,8 @@ body {
     margin: 5px 11px 0 0;
     transition: opacity .5s ease-in-out;
     text-align: center;
+    transform: scale(1.1);
+    transform-origin: top right;
 }
 #poll > .poll-title {
 	/* position: absolute; */
