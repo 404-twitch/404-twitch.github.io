@@ -139,7 +139,7 @@ twitch.pub.predictions.handle = function(evt) {
 			UI.prediction.classList.add("hidden")
 			delete this[pred.id]
 		} else if (pred.status == "RESOLVED") {
-			UI.prediction.classList.remove("hidden");
+			UI.prediction.className = "";
 			
 			let pr = this[pred.id]
 			
@@ -150,7 +150,9 @@ twitch.pub.predictions.handle = function(evt) {
 					break;
 				}
 			}
-			UI.prediction.classList.add("hidden")
+			setTimeout(function() { 
+				UI.prediction.classList.add("hidden");
+			}, 5000); // 1min delay
 			delete this[pred.id]
 		}
 	}
