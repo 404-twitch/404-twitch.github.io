@@ -71,6 +71,7 @@ twitch.pub.predictions.update = function(pred) {
 	let outcomes = [];
 	for (let i in pred.outcomes) {
 		outcomes[i] = {
+			"id": pred.outcomes[i].id,
 			"title": pred.outcomes[i].title,
 			"points": pred.outcomes[i].total_points
 		}
@@ -125,17 +126,35 @@ twitch.pub.predictions.handle = function(evt) {
 			UI.prediction.ptitle.innerText = pred.title;
 			UI.prediction.blue.innerText = pred.outcomes[0].title;
 			UI.prediction.red.innerText = pred.outcomes[1].title;
-			UI.prediction.classList.remove("hidden")
+			UI.prediction.className = "";
+			UI.prediction.bar.style.width = "50%";
 		}
 	} else if (evt.type == "event-updated") {
 		let pred = evt.data.event;
 		this.update(pred);
 		// update UI
-		if (evt.data.event.status == "CANCELED" || evt.data.event.status == "ENDED") {
+		if (pred.status == "LOCKED") { /* Hide Locked */
+			UI.prediction.classList.add("hidden") 
+		} else if (pred.status == "CANCELED") {
+			UI.prediction.classList.add("hidden")
+			delete this[pred.id]
+		} else if (pred.status == "RESOLVED") {
+			UI.prediction.classList.remove("hidden");
+			
+			let pr = this[pred.id]
+			
+			for (let i in pr.outcomes) {
+				if  (pr.outcomes[i].id == pred.winning_outcome_id) {
+					UI.prediction.bar.style = "";
+					UI.prediction.classList.add(`pred-${['blue','red'][i]}-win`);
+					break;
+				}
+			}
 			UI.prediction.classList.add("hidden")
 			delete this[pred.id]
 		}
 	}
+	console.log(evt);
 }
 twitch.pub.hypetrain.handle = function(data) {
 	
@@ -151,7 +170,7 @@ function handlePub(event) {
 	let evt = JSON.parse(event.data);
 	if (evt.type == "PING") {
 		this.send('{"type":"PONG"}');
-		setTimeout(function() { twitch.pub.send('{"type":"PING"}') }, 60000); // 1min delay
+		setTimeout(function() { twitch.pub.send('{"type":"PING"}') }, 9000); // 1min delay
 		return;
 	}
 	if (evt.type == "MESSAGE") {
