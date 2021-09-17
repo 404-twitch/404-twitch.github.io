@@ -111,8 +111,8 @@ twitch.pub.polls.handle = function(evt) {
 		winner.lastChild.style.background = "#00fff3";
 		delete this[poll.poll_id];
 		// remove from UI
-	} else if (evt.type == "POLL_ARCHIVE" || evt.type == "POLL_TERMINATE") {
-		UI.poll.classList.add("hidden")
+	} else if (evt.type == "POLL_TERMINATE") {
+		UI.poll.className = "hidden";
 		let poll = evt.data.poll;
 		delete this[poll.poll_id];
 	}
