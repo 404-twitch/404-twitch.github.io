@@ -172,10 +172,7 @@ function handlePub(event) {
 	let evt = JSON.parse(event.data);
 	if (evt.type == "PING") {
 		this.send('{"type":"PONG"}');
-		setTimeout(function() { twitch.pub.send('{"type":"PING"}') }, 9000); // 1min delay
-		return;
-	}
-	if (evt.type == "MESSAGE") {
+	} else if (evt.type == "MESSAGE") {
 		let data = evt.data;
 		if (data.topic.startsWith("polls")) this.polls.handle(JSON.parse(data.message));
 		else if (data.topic.startsWith("predictions-channel")) this.predictions.handle(JSON.parse(data.message));
@@ -210,6 +207,10 @@ function connectClient() {
 			topics.push(c + "." + CHANNEL.ID);
 
 		this.send(JSON.stringify({"type":"LISTEN","nonce":"dL3BXYJMCQXZHPDZn5AG6Lo6D38TZ8","data":{"topics":topics}}))
+		
+		this.interval = setInterval(function() { 
+			twitch.pub.send('{"type":"PING"}') 
+		}, 240000);
 	}
 	twitch.pub.onmessage = handlePub;
 }
