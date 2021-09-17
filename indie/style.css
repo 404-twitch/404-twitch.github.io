@@ -42,7 +42,7 @@ body {
     height: 117%;
     width: 118%;
     content: ' ';
-    background: #000000b3;
+    background: linear-gradient(#000000b3 0%, #00000090 100%);
     transform: skewX(10deg);
     border-radius: 0 0 0 5px;
 }
