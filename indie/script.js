@@ -62,7 +62,9 @@ twitch.pub.polls.update = function(poll) {
 			let num = ((choices[i].votes / poll.votes.total) * 100) + "%";
 			UI.poll.outcomes[i].querySelector(".progress").style.width = num
 		}
-		UI.poll.choices.sort();
+		setTimeout(function() { 
+			UI.poll.choices.sort();
+		}, 500); // 1min delay
 	}
 }
 twitch.pub.predictions.update = function(pred) {
@@ -94,17 +96,24 @@ twitch.pub.polls.handle = function(evt) {
 			UI.poll.choices.appendChild(cc);
 			UI.poll.outcomes.push(cc);
 		}
+		UI.poll.ptitle.innerText = poll.title;
 		UI.poll.classList.remove("hidden")
 	} else if (evt.type == "POLL_UPDATE") {
 		this.update(evt.data.poll);
 		// update UI
-	} else if (evt.type == "POLL_COMPLETE" || evt.type == "POLL_TERMINATE" || evt.type == "POLL_ARCHIVE") {
+	} else if (evt.type == "POLL_COMPLETE") {
 		let poll = evt.data.poll;
+		UI.poll.classList.add("hidden")
+		let winner = UI.poll.choices.firstElementChild;
+		winner.style.borderColor = "#4dc2c3";
+		winner.lastChild.style.width = "100%";
+		winner.lastChild.style.background = "#00fff3";
 		delete this[poll.poll_id];
 		// remove from UI
+	} else if (evt.type == "POLL_ARCHIVE" || evt.type == "POLL_TERMINATE") {
 		UI.poll.classList.add("hidden")
-		// Highlight winner
-		// UI.poll.choices.innerHTML = ""; // new poll;
+		let poll = evt.data.poll;
+		delete this[poll.poll_id];
 	}
 }
 twitch.pub.predictions.handle = function(evt) {
