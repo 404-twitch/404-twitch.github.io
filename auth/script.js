@@ -1,6 +1,7 @@
 const CLIENT_ID = "jxjltziqt6nq28n8hmsozp9jbk02sz";
 const RED_URL = "https://404-twitch.github.io/auth"
-const REQ_SCOPES = "channel:manage:redemptions+channel:read:redemptions+user:read:email+chat:edit+chat:read"
+// const REQ_SCOPES = "channel:manage:redemptions+channel:read:redemptions+user:read:email+chat:edit+chat:read"
+const REQ_SCOPES = "bits:read+channel:read:redemptions+channel:read:subscriptions+chat:read"
 
 var hash = location.hash.substr(1);
 var token = hash.substr(hash.indexOf('access_token=')).split('&')[0].split('=')[1];

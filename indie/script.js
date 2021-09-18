@@ -1,11 +1,21 @@
 const twitch = {};
 twitch.chat = new WebSocket("wss://irc-ws.chat.twitch.tv/")
-twitch.pub = new WebSocket("wss://pubsub-edge.twitch.tv/v1")
+twitch.pub = undefined;
 
 const CLIENT_ID = "kimne78kx3ncx6brgo4mv6wki5h1ko";
 const CHANNEL = {};
 CHANNEL.NAME = location.hash.substr(1);
 CHANNEL.ID = 0;
+CHANNEL.TOKEN = undefined;
+
+function nonce(length) {
+    var text = "";
+    var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    for (var i = 0; i < length; i++) {
+        text += possible.charAt(Math.floor(Math.random() * possible.length));
+    }
+    return text;
+}
 
 const UI = {};
 UI.prediction = document.querySelector("#prediction");
@@ -44,11 +54,7 @@ function handleChat(event) {
 	}
 }
 
-twitch.pub.polls = {};
-twitch.pub.predictions = {};
-twitch.pub.hypetrain = {};
-
-twitch.pub.polls.update = function(poll) {
+function updatePoll(poll) {
 	let choices = [];
 	for (let i in poll.choices) {
 		choices[i] = {
@@ -67,7 +73,8 @@ twitch.pub.polls.update = function(poll) {
 		}, 500); // 1min delay
 	}
 }
-twitch.pub.predictions.update = function(pred) {
+
+function updatePred(pred) {
 	let outcomes = [];
 	for (let i in pred.outcomes) {
 		outcomes[i] = {
@@ -81,7 +88,7 @@ twitch.pub.predictions.update = function(pred) {
 	UI.prediction.bar.style.width = ((outcomes[0].points / (outcomes[0].points + outcomes[1].points)) * 100) + "%";
 }
 
-twitch.pub.polls.handle = function(evt) {
+function handlePoll(evt) {
 	if (evt.type == "POLL_CREATE") {
 		UI.poll.outcomes = [];
 		this.update(evt.data.poll);
@@ -117,7 +124,7 @@ twitch.pub.polls.handle = function(evt) {
 		delete this[poll.poll_id];
 	}
 }
-twitch.pub.predictions.handle = function(evt) {
+function handlePred(evt) {
 	if (evt.type == "event-created") {
 		this.update(evt.data.event);
 		// add to UI
@@ -153,33 +160,26 @@ twitch.pub.predictions.handle = function(evt) {
 			delete this[pred.id]
 		}
 	}
-	console.log(evt);
-}
-twitch.pub.hypetrain.handle = function(data) {
-	
-}
-twitch.pub.handleRaid = function(data) {
-	
-}
-twitch.pub.handlePoints = function(data) {
-	// console.log(data)
 }
 
 function handlePub(event) {
 	let evt = JSON.parse(event.data);
 	if (evt.type == "PING") {
 		this.send('{"type":"PONG"}');
-	} else if (evt.type == "MESSAGE") {
+	} else if (evt.type == 'RECONNECT') {
+		this.close(); // close current connection (auto-reconnects on close)
+    } else if (evt.type == "MESSAGE") {
 		let data = evt.data;
 		if (data.topic.startsWith("polls")) this.polls.handle(JSON.parse(data.message));
 		else if (data.topic.startsWith("predictions-channel")) this.predictions.handle(JSON.parse(data.message));
 		else if (data.topic.startsWith("hype-train")) this.hypetrain.handle(JSON.parse(data.message));
 		else if (data.topic.startsWith("raid")) this.handleRaid(JSON.parse(data.message));
 		else if (data.topic.startsWith("community-points-channel")) this.handlePoints(JSON.parse(data.message));
+		else if (data.topic.startsWith("channel-bits-events-v2")) this.handlePoints(JSON.parse(data.message));
 	}
 }
 
-function connectClient() {
+function connectChat() {
 	twitch.chat.onopen = function (event) {
 		this.USER = `justinfan${Math.floor((Math.random() * 80000) + 1000)}`;
 		this.send("CAP REQ :twitch.tv/tags twitch.tv/commands");
@@ -193,8 +193,26 @@ function connectClient() {
 			this.onmessage = handleChat;
 		}
 	}
+}
+
+function heartbeat() { twitch.pub.send('{"type":"PING"}') }
+function connectPub() {
+	twitch.pub = new WebSocket("wss://pubsub-edge.twitch.tv/v1")
+	twitch.pub.polls = {};
+	twitch.pub.predictions = {};
+	twitch.pub.hypetrain = {};
+	twitch.pub.polls.update = updatePoll;
+	twitch.pub.predictions.update = updatePred;
+	twitch.pub.polls.handle = handlePoll;
+	twitch.pub.predictions.handle = handlePred;
+	twitch.pub.hypetrain.handle = function(data) { }
+	twitch.pub.handleRaid = function(data) { }
+	twitch.pub.handlePoints = function(data) { }
+	twitch.pub.handleBits = function(data) { }
 	
-	let pub_channels = ["community-points-channel-v1", "predictions-channel-v1", "raid", "polls", "hype-train-events-v1"]
+	let pub_channels = ["community-points-channel-v1", "predictions-channel-v1", "raid", "polls", "hype-train-events-v1", "channel-cheer-events-public-v1", "channel-sub-gifts-v1"]
+	let auth_channels = ["channel-bits-events-v2"]
+	let test_channels = ["channel-bit-events-public"]
 	
 	twitch.pub.onopen = function (event) {
 		this.send('{"type":"PING"}');
@@ -203,12 +221,27 @@ function connectClient() {
 		for (let c of pub_channels)
 			topics.push(c + "." + CHANNEL.ID);
 
-		this.send(JSON.stringify({"type":"LISTEN","nonce":"dL3BXYJMCQXZHPDZn5AG6Lo6D38TZ8","data":{"topics":topics}}))
+		this.send(JSON.stringify({"type":"LISTEN","nonce":nonce(15),"data":{"topics":topics}}))
 		
-		this.interval = setInterval(function() { 
-			twitch.pub.send('{"type":"PING"}') 
-		}, 240000);
+		if (CHANNEL.TOKEN != undefined)
+			for (let c of auth_channels)
+				this.send(JSON.stringify({"type":"LISTEN","nonce":nonce(15),"data":{"topics":[c + "." + CHANNEL.ID]}}))
+		
+		for (let c of test_channels)
+			this.send(JSON.stringify({"type":"LISTEN","nonce":nonce(15),"data":{"topics":[c + "." + CHANNEL.ID]}}))
+		
+		this.heartbeat = setInterval(heartbeat, 240000);
 	}
+	
+	twitch.pub.onclose = function() {
+		clearInterval(this.heartbeat);
+		setTimeout(connectPub, 3000); // reconnect after 3s
+	}
+	
+    twitch.pub.onerror = function(error) {
+        console.log(JSON.stringify(error));
+    };
+	
 	twitch.pub.onmessage = handlePub;
 }
 
@@ -234,4 +267,7 @@ fetch("https://gql.twitch.tv/gql", {
 }).then(response => response.json())
 .then(r => {
 	CHANNEL.ID = r.data.channel.id;
-}).then(connectClient())
+}).then(e => {
+	connectChat();
+	connectPub();
+})
