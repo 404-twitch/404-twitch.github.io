@@ -135,10 +135,7 @@ twitch.pub.predictions.handle = function(evt) {
 		// update UI
 		if (pred.status == "LOCKED") { /* Hide Locked */
 			UI.prediction.classList.add("hidden") 
-		} else if (pred.status == "CANCELED") {
-			UI.prediction.classList.add("hidden")
-			delete this[pred.id]
-		} else if (pred.status == "RESOLVED") {
+		} else if (pred.status == "RESOLVED" || pred.status == "CANCELED") { // show result
 			UI.prediction.className = "";
 			
 			let pr = this[pred.id]
