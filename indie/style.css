@@ -38,7 +38,7 @@ body {
 	right: 50% !important;
     transform: translateX(50%);
 }
-.pred-red-win, pred-blue-win { color: #e6ff5b }
+.pred-red-win, .pred-blue-win { color: #e6ff5b }
 .pred-red-win > .bar,
 .pred-blue-win > .bar {
 	border-color: #e6ff5b !important;
